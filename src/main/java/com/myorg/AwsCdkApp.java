@@ -1,10 +1,7 @@
 package com.myorg;
 
 import software.amazon.awscdk.core.App;
-import software.amazon.awscdk.core.Environment;
-import software.amazon.awscdk.core.StackProps;
 
-import java.util.Arrays;
 
 public class AwsCdkApp {
     public static void main(final String[] args) {
@@ -17,9 +14,14 @@ public class AwsCdkApp {
         ClusterStack clusterStack = new ClusterStack(app, "Cluster", vpcStack.getVpc());
         clusterStack.addDependency(vpcStack);
 
+        //Comando para criação do RDS
+        RdsCdkStack rdsCdkStack = new RdsCdkStack(app, "Rds", vpcStack.getVpc());
+        rdsCdkStack.addDependency(vpcStack);
+
         //Criação do LoadBalancer e AutoScaling
         Service01Stack service01Stack = new Service01Stack(app, "Service01", clusterStack.getCluster());
         service01Stack.addDependency(clusterStack);
+        service01Stack.addDependency(rdsCdkStack);
         app.synth();
 
     }

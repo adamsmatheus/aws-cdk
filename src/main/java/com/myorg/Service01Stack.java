@@ -8,6 +8,9 @@ import software.amazon.awscdk.services.ecs.patterns.ApplicationLoadBalancedTaskI
 import software.amazon.awscdk.services.elasticloadbalancingv2.HealthCheck;
 import software.amazon.awscdk.services.logs.LogGroup;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class Service01Stack extends Stack {
     public Service01Stack(final Construct scope, final String id, Cluster cluster) {
         this(scope, id, null, cluster);
@@ -15,6 +18,12 @@ public class Service01Stack extends Stack {
 
     public Service01Stack(final Construct scope, final String id, final StackProps props, Cluster cluster) {
         super(scope, id, props);
+
+        Map<String, String> envVariable = new HashMap<>();
+        envVariable.put("SPRING_DATASOURCE_URL","jdbc:mariadb://" + Fn.importValue("rds-endpoint")
+        + ":3306/aws?createDatabaseIfNotExist=true");
+        envVariable.put("SPRING_DATASOURCE_USERNAME","admin");
+        envVariable.put("SPRING_DATASOURCE_PASSWORD",Fn.importValue("rds-password"));
 
         // Criação do LoadBalancer
         ApplicationLoadBalancedFargateService service01 = ApplicationLoadBalancedFargateService.Builder.create(this,"ALB01")
@@ -27,7 +36,7 @@ public class Service01Stack extends Stack {
                 .taskImageOptions(
                         ApplicationLoadBalancedTaskImageOptions.builder()
                                 .containerName("aws")
-                                .image(ContainerImage.fromRegistry("mathadams/aws:1.1.0"))
+                                .image(ContainerImage.fromRegistry("mathadams/aws:1.2.0"))
                                 .containerPort(8080)
                                 .logDriver(LogDriver.awsLogs(AwsLogDriverProps.builder()
                                                 .logGroup(LogGroup.Builder.create(this,"Service01LogGroup")
@@ -36,6 +45,7 @@ public class Service01Stack extends Stack {
                                                         .build())
                                                 .streamPrefix("Service01")
                                                 .build()))
+                                .environment(envVariable)
                                 .build()
                 )
                 .publicLoadBalancer(true)
